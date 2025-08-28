@@ -18,3 +18,16 @@ app.add_middleware(
 async def analyze(url: str = Query(...)):
     result = analyze_url(url)
     return {"url": url, "result": result}
+
+"""
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/analyze.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/analyze", "dest": "api/analyze.py" }
+  ]
+}
+
+"""
