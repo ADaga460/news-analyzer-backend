@@ -2,4 +2,3 @@ fastapi
 uvicorn
 requests
 newspaper4k
-openai
