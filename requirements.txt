@@ -11,4 +11,4 @@ gunicorn
 torch
 transformers
 textblob
-googlesearch
+googlesearch-python
