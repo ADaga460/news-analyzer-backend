@@ -1,3 +1,4 @@
+#newsanalyzer.py
 import sys
 import time
 import random
@@ -5,7 +6,7 @@ import requests
 import newspaper
 import torch
 
-from api.gptreq import getRequests
+from gptreq import getRequests
 from pathlib import Path
 from transformers import pipeline
 from googlesearch import search
@@ -106,17 +107,18 @@ def analyze_url(url: str) -> str:
         article_text = text(url)
         summary = summarize_article(article_text)
         print("summarized article")
-        gpt_analysis = getRequests(article_text)
+        gpt_analysis = "LLM analysis will be done client-side via WebLLM"
         print("got gpt analysis")
         related = fetch_related(summary, url)
         print("fetched related articles")
 
-        response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else "None"}"
+        response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else 'None'}"
         return response
     except Exception as e:
         return f"Error analyzing article: {e}"
 
 # keep old CLI mode intact
+"""
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python newsanalyzer.py <article_url>")
@@ -124,3 +126,4 @@ if __name__ == "__main__":
 
     url = sys.argv[1]
     print(analyze_url(url))
+"""

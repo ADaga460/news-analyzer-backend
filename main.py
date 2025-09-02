@@ -1,23 +1,19 @@
-from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
+#main.py
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from newsanalyzer import analyze_url
-
-# uvicorn server:app --reload --host 0.0.0.0 --port 8000
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/analyze")
-async def analyze(url: str = Query(...)):
+@app.post("/analyze")
+async def analyze(request: Request):
+    data = await request.json()
+    url = data.get("url")
+    if not url:
+        return JSONResponse({"error": "Missing URL"}, status_code=400)
     result = analyze_url(url)
-    return {"url": url, "result": result}
+    return {"result": result}
+
 
 """
 {

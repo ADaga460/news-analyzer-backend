@@ -1,4 +1,12 @@
+flask
 fastapi
 uvicorn
 requests
 newspaper4k
+beautifulsoup4
+lxml
+tldextract
+gunicorn
+torch
+transformers
+textblob
