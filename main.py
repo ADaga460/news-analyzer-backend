@@ -14,16 +14,18 @@ async def analyze(request: Request):
     result = analyze_url(url)
     return {"result": result}
 
+from fastapi.middleware.cors import CORSMiddleware
 
-"""
-{
-  "version": 2,
-  "builds": [
-    { "src": "api/analyze.py", "use": "@vercel/python" }
-  ],
-  "routes": [
-    { "src": "/analyze", "dest": "api/analyze.py" }
-  ]
-}
+app = FastAPI()
 
-"""
+origins = [
+    "https://news-analyzer-frontend-plat.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
