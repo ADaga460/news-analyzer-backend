@@ -1,12 +1,8 @@
 # gptreq.py
+# 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
 import requests
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "factcheckdb"
-
-
-def getRequests(article_text: str):
-    prompt = f"""
+prompt = """
     Analyze the language and tone used in this article about [specific topic or issue] and assess its political bias. Determine if the article leans more towards liberal, 
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
     Bias, as well as Factual Evidence, with specific examples from the text. Fact-check any claims made in the article using reputable sources such as Snopes, FactCheck.org, or 
@@ -44,8 +40,34 @@ def getRequests(article_text: str):
     Text:
     {article_text}
     """
-    
-   
-    response = requests.post(OLLAMA_URL, json={"model": MODEL, "prompt": prompt, "stream": False})
-    return response.json()["response"]
-    #return(response.json()["response"])
+
+# gptreq.py
+import os
+import requests
+
+OPENROUTER_API_KEY = os.getenv("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")  # put your key in env
+MODEL = "deepseek/deepseek-chat-v3.1:free"
+
+def getRequests(article_text: str):
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://yourdomain.com",  # optional but recommended
+        "X-Title": "News Analyzer",                # optional
+    }
+
+    data = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant that analyzes political bias and factual accuracy in news articles. You deal with only facts, and detect possible areas for bias with un"},
+            {"role": "user", "content": prompt},
+        ],
+    }
+
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+
+    if response.status_code != 200:
+        raise Exception(f"OpenRouter API error: {response.status_code}, {response.text}")
+
+    return response.json()["choices"][0]["message"]["content"]
