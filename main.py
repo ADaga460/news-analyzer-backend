@@ -5,7 +5,7 @@ from newsanalyzer import analyze_url
 
 app = FastAPI()
 
-@app.post("/analyze")
+@app.post("/api/analyze")
 async def analyze(request: Request):
     data = await request.json()
     url = data.get("url")
