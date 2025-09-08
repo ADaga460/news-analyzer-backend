@@ -103,16 +103,17 @@ def analyze_url(url: str) -> str:
     print(url)
     try:
         article = newspaper.Article(url)
-        article.download()
-        article.parse()
-        article.nlp()
+        #article.download()
+        #article.parse()
+        #article.nlp()
+        # Have to download NLTK ** Summary
         print(url)
         #info = getinfo(url)
         print("got article info", flush=True)
 
         article_text = text(url)
 
-        summary = article.summary
+        #summary = article.summary
         print("summarized article", flush=True)
 
         gpt_analysis = getRequests(article_text)
