@@ -102,13 +102,17 @@ def getinfo(url: str):
 def analyze_url(url: str) -> str:
     print(url)
     try:
+        article = newspaper.Article(url)
+        article.download()
+        article.parse()
+        article.nlp()
         print(url)
         #info = getinfo(url)
         print("got article info", flush=True)
 
         article_text = text(url)
 
-        summary = summarize_article(article_text)
+        summary = article.summary
         print("summarized article", flush=True)
 
         gpt_analysis = getRequests(article_text)
@@ -116,7 +120,7 @@ def analyze_url(url: str) -> str:
 
         #related = fetch_related(summary, url)
         print("fetched related articles", flush=True)
-        
+
         response = f"{gpt_analysis}"
         #response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else 'None'}"
         return response
