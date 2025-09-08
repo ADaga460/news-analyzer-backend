@@ -45,7 +45,7 @@ prompt = """
 import os
 import requests
 
-OPENROUTER_API_KEY = os.getenv("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")  # put your key in env
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # put your key in env
 MODEL = "deepseek/deepseek-chat-v3.1:free"
 
 def getRequests(article_text: str):
