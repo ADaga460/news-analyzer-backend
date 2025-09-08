@@ -2,8 +2,23 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from newsanalyzer import analyze_url
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "https://news-analyzer-frontend-plat.vercel.app",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/api/analyze")
 async def analyze(request: Request):
@@ -17,20 +32,7 @@ async def analyze(request: Request):
     result = analyze_url(url)
     return {"result": result}
 
-from fastapi.middleware.cors import CORSMiddleware
 
-
-origins = [
-    "https://news-analyzer-frontend-plat.vercel.app",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 """
 curl -X POST "http://127.0.0.1:8000/api/analyze" \
   -H "Content-Type: application/json" \
