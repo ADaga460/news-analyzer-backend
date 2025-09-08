@@ -100,19 +100,25 @@ def getinfo(url: str):
 
 # clean function for frontend
 def analyze_url(url: str) -> str:
+    print(url)
     try:
         print(url)
-        info = getinfo(url)
-        print("got article info")
-        article_text = text(url)
-        summary = summarize_article(article_text)
-        print("summarized article")
-        gpt_analysis = "LLM analysis will be done client-side via WebLLM"
-        print("got gpt analysis")
-        related = fetch_related(summary, url)
-        print("fetched related articles")
+        #info = getinfo(url)
+        print("got article info", flush=True)
 
-        response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else 'None'}"
+        article_text = text(url)
+
+        summary = summarize_article(article_text)
+        print("summarized article", flush=True)
+
+        gpt_analysis = getRequests(article_text)
+        print("got gpt analysis", flush=True)
+
+        #related = fetch_related(summary, url)
+        print("fetched related articles", flush=True)
+        
+        response = f"{gpt_analysis}"
+        #response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else 'None'}"
         return response
     except Exception as e:
         return f"Error analyzing article: {e}"

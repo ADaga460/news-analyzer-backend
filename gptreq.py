@@ -1,8 +1,14 @@
 # gptreq.py
-# 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
+import os
 import requests
 
-prompt = """
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # from render
+#OPENROUTER_API_KEY = "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"
+MODEL = "deepseek/deepseek-chat-v3.1:free"
+
+def getRequests(article_text: str):
+    print(article_text, flush=True)
+    prompt = f"""
     Analyze the language and tone used in this article about [specific topic or issue] and assess its political bias. Determine if the article leans more towards liberal, 
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
     Bias, as well as Factual Evidence, with specific examples from the text. Fact-check any claims made in the article using reputable sources such as Snopes, FactCheck.org, or 
@@ -41,19 +47,10 @@ prompt = """
     {article_text}
     """
 
-# gptreq.py
-import os
-import requests
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # put your key in env
-MODEL = "deepseek/deepseek-chat-v3.1:free"
-
-def getRequests(article_text: str):
-
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://yourdomain.com",  # optional but recommended
+        "HTTP-Referer": "https://news-analyzer-frontend-plat.vercel.app/",  # optional but recommended
         "X-Title": "News Analyzer",                # optional
     }
 
