@@ -6,10 +6,8 @@ import requests
 
 def getRequests(article_text: str):
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # from render
-    #OPENROUTER_API_KEY = "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"
-    MODEL = "deepseek/deepseek-chat-v3.1:free"
+    MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
     
-    print(article_text, flush=True)
     prompt = f"""
     Analyze the language and tone used in this article about [specific topic or issue] and assess its political bias. Determine if the article leans more towards liberal, 
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
@@ -58,6 +56,7 @@ def getRequests(article_text: str):
 
     data = {
         "model": MODEL,
+        "temperature": 0.2,
         "messages": [
             {"role": "system", "content": "You are a helpful assistant that analyzes political bias and factual accuracy in news articles. You deal with only facts, and detect possible areas for bias with un"},
             {"role": "user", "content": prompt},
