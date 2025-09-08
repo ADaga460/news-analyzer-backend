@@ -2,11 +2,13 @@
 import os
 import requests
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # from render
-#OPENROUTER_API_KEY = "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"
-MODEL = "deepseek/deepseek-chat-v3.1:free"
+
 
 def getRequests(article_text: str):
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # from render
+    #OPENROUTER_API_KEY = "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"
+    MODEL = "deepseek/deepseek-chat-v3.1:free"
+    
     print(article_text, flush=True)
     prompt = f"""
     Analyze the language and tone used in this article about [specific topic or issue] and assess its political bias. Determine if the article leans more towards liberal, 
