@@ -5,6 +5,7 @@ import random
 import requests
 import newspaper
 import torch
+import trafilatura
 
 from gptreq import getRequests
 from pathlib import Path
@@ -86,10 +87,16 @@ def label(score: float) -> str:
     return "Left-leaning" if score < -0.1 else "Right-leaning" if score > 0.1 else "Neutral"
 
 def text(url: str) -> str:
-    article = newspaper.Article(url)
-    article.download()
-    article.parse()
-    return article.text
+    downloaded = requests.get(url).text
+    text = trafilatura.extract(downloaded)
+    if text:
+        print(text)
+        return(text)
+    else:
+        article = newspaper.Article(url)
+        article.download()
+        article.parse()
+        return article.text
 
 def getinfo(url: str):
     article = newspaper.Article(url)

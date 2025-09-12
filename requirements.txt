@@ -12,3 +12,4 @@ torch
 transformers
 textblob
 googlesearch-python
+trafilatura
