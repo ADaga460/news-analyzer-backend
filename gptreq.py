@@ -13,7 +13,7 @@ def getRequests(article_text: str):
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
     Bias, as well as Factual Evidence, with specific examples from the text. Fact-check any claims made in the article using reputable sources such as Snopes, FactCheck.org, or 
     PolitiFact. Factual Evidence Score lowers based on its use of rhetoric, pathos, and heavily unbalanced content. If the article relies heavily on opinion, rhetoric, and unbalanced content,
-    as well as lack of correct facts, lower score greatly. If the text appears to be exclusively opinionated, reduce score heavily.  Analyze political bias from known bias in news outlets 
+    as well as lack of correct facts, lower factual score greatly. If the text appears to be exclusively opinionated, increase bias score heavily.  Analyze political bias from known bias in news outlets 
     (for example, AP News is center, Fox is known to be right, and NYTimes is known to be slightly left leaning), and due to article content.
 
     Below is the format you must adhere to, where everything in brackets is filled in with what is relevent from the article:

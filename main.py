@@ -34,8 +34,10 @@ async def analyze(request: Request):
 
 
 """
+uvicorn server:app --reload --host 0.0.0.0 --port 8000
+
 curl -X POST "http://127.0.0.1:8000/api/analyze" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.nytimes.com/2025/09/07/world/asia/japan-shigeru-ishiba-resign.html"}'
+  -d '{"url": "https://www.foxnews.com/media/boston-university-college-republicans-call-security-accountability-after-charlie-kirk-assassination"}'
 
 """
