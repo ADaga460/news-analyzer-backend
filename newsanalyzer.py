@@ -14,6 +14,18 @@ from googlesearch import search
 from newspaper import Article
 from textblob import TextBlob
 
+# Imports for Selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# Use webdriver-manager for automatic driver management
+from webdriver_manager.chrome import ChromeDriverManager
+
 # Define a common User-Agent to avoid bot detection
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -26,6 +38,48 @@ SINGLE = ["apnews.com"]
 
 DOMAIN_BIAS = {d: -1 for d in LEFT} | {d: 0 for d in CENTER} | {d: 1 for d in RIGHT}
 DOMAIN_BIAS_SINGLE = {d: 0 for d in SINGLE}
+
+# --- New Selenium-based scraping function ---
+def get_html_with_selenium(url: str) -> str:
+    """
+    Uses a headless Chrome browser to load a page and execute JavaScript.
+    Returns the page source.
+    """
+    options = Options()
+    # Run in headless mode (no visible browser window)
+    options.add_argument('--headless=new')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    
+    # You can add the User-Agent here as well
+    options.add_argument(f'user-agent={HEADERS["User-Agent"]}')
+
+    try:
+        # Use webdriver-manager to automatically handle the correct driver version
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        
+        # Navigate to the URL
+        driver.get(url)
+
+        # Wait for the page to load, especially for dynamically generated content
+        # You may need to adjust the wait time depending on the website
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
+        
+        # Return the complete page source
+        return driver.page_source
+
+    except (WebDriverException, TimeoutException) as e:
+        print(f"Selenium error: {e}", file=sys.stderr)
+        return ""
+    finally:
+        # Always quit the driver to release resources
+        if 'driver' in locals():
+            driver.quit()
+
+# --- Other functions remain mostly the same, but 'text' is updated ---
 
 def split_text(text, max_words=500):
     words = text.split()
@@ -53,7 +107,6 @@ def summarize_article(text: str) -> str:
     return combined
 
 def fetch_related(summary_text: str, url: str, hits_per_bias=5, delay=5, retries=2):
-    # This function is not used in the `analyze_url` function, but I'll update it to use the HEADERS
     article = newspaper.Article(url)
     article.download(headers=HEADERS)
     article.parse()
@@ -93,55 +146,53 @@ def label(score: float) -> str:
     return "Left-leaning" if score < -0.1 else "Right-leaning" if score > 0.1 else "Neutral"
 
 def text(url: str) -> str:
-    # First, try to download the content with our headers
-    try:
-        response = requests.get(url, headers=HEADERS)
-        response.raise_for_status()  # This will raise an HTTPError for bad responses (4xx or 5xx)
-        downloaded_html = response.text
+    # Use Selenium to get the HTML content, which can handle JavaScript and anti-bot measures
+    print("Attempting to download page with Selenium...", flush=True)
+    downloaded_html = get_html_with_selenium(url)
 
-        # Try trafilatura first, as it is often good for cleaning up content
-        extracted_text = trafilatura.extract(downloaded_html)
-        if len(extracted_text) > 100:
-            return extracted_text
-        
-        # Fallback to newspaper3k if trafilatura fails to find the content
-        print("Trafilatura failed, falling back to newspaper3k...")
-        article = newspaper.Article(url)
-        # Pass the already downloaded HTML to newspaper to avoid a second network request
+    if not downloaded_html:
+        print("Selenium failed to get HTML, returning empty string.")
+        return ""
+
+    # Try trafilatura first
+    extracted_text = trafilatura.extract(downloaded_html)
+    if extracted_text and len(extracted_text) > 100:
+        return extracted_text
+    
+    # Fallback to newspaper3k if trafilatura fails
+    print("Trafilatura failed, falling back to newspaper3k...")
+    article = newspaper.Article(url)
+    try:
+        # Pass the already downloaded HTML to newspaper
         article.download(input_html=downloaded_html)
         article.parse()
         return article.text
-    
-    except requests.RequestException as e:
-        print(f"HTTP request failed for {url}: {e}", file=sys.stderr)
-        return ""
     except Exception as e:
-        print(f"Error extracting text from {url}: {e}", file=sys.stderr)
+        print(f"Error extracting text with newspaper3k: {e}", file=sys.stderr)
         return ""
 
 def getinfo(url: str) -> list:
     article = newspaper.Article(url)
-    article.download(headers=HEADERS) # Use headers for download
+    # Using the Selenium function to get the page content for newspaper3k
+    downloaded_html = get_html_with_selenium(url)
+    if not downloaded_html:
+        return []
+
+    article.download(input_html=downloaded_html)
     article.parse()
     article.nlp()
     return [article.authors, article.publish_date, article.keywords, article.tags]
 
-# clean function for frontend
 def analyze_url(url: str) -> str:
     print(url)
     try:
-        # Note: newspaper.Article() and its methods are no longer needed here
-        # since the `text()` function handles the downloading and parsing.
-        
         print("got article info", flush=True)
-
         article_text = text(url)
 
         if not article_text:
-            return "Error: Could not extract any text from the article."
+            return "Error: Could not extract any text from the article. The website may have blocked access."
 
         print("got article text", flush=True)
-
         gpt_analysis = getRequests(article_text)
         print("got gpt analysis", flush=True)
 

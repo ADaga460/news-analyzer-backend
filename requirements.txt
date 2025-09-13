@@ -13,3 +13,5 @@ transformers
 textblob
 googlesearch-python
 trafilatura
+selenium
+webdriver-manager
