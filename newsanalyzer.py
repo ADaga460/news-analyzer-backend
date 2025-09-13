@@ -1,4 +1,4 @@
-#newsanalyzer.py
+# newsanalyzer.py
 import sys
 import time
 import random
@@ -14,7 +14,12 @@ from googlesearch import search
 from newspaper import Article
 from textblob import TextBlob
 
-LEFT  = ["msnbc.com", "huffpost.com", "theguardian.com", "cnn.com"]
+# Define a common User-Agent to avoid bot detection
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
+
+LEFT = ["msnbc.com", "huffpost.com", "theguardian.com", "cnn.com"]
 RIGHT = ["nypost.com", "dailywire.com", "breitbart.com"]
 CENTER = ["apnews.com", "bbc.com"]
 SINGLE = ["apnews.com"]
@@ -48,8 +53,9 @@ def summarize_article(text: str) -> str:
     return combined
 
 def fetch_related(summary_text: str, url: str, hits_per_bias=5, delay=5, retries=2):
+    # This function is not used in the `analyze_url` function, but I'll update it to use the HEADERS
     article = newspaper.Article(url)
-    article.download()
+    article.download(headers=HEADERS)
     article.parse()
     article.nlp()
     keywords = article.keywords
@@ -65,7 +71,7 @@ def fetch_related(summary_text: str, url: str, hits_per_bias=5, delay=5, retries
                 time.sleep(delay + random.uniform(0, 2))
                 for u in urls:
                     art = Article(u)
-                    art.download()
+                    art.download(headers=HEADERS)
                     art.parse()
                     if domain in u:
                         results.append(u)
@@ -87,20 +93,35 @@ def label(score: float) -> str:
     return "Left-leaning" if score < -0.1 else "Right-leaning" if score > 0.1 else "Neutral"
 
 def text(url: str) -> str:
-    downloaded = requests.get(url).text
-    text = trafilatura.extract(downloaded)
-    if text:
-        print(text)
-        return(text)
-    else:
+    # First, try to download the content with our headers
+    try:
+        response = requests.get(url, headers=HEADERS)
+        response.raise_for_status()  # This will raise an HTTPError for bad responses (4xx or 5xx)
+        downloaded_html = response.text
+
+        # Try trafilatura first, as it is often good for cleaning up content
+        extracted_text = trafilatura.extract(downloaded_html)
+        if len(extracted_text) > 100:
+            return extracted_text
+        
+        # Fallback to newspaper3k if trafilatura fails to find the content
+        print("Trafilatura failed, falling back to newspaper3k...")
         article = newspaper.Article(url)
-        article.download()
+        # Pass the already downloaded HTML to newspaper to avoid a second network request
+        article.download(input_html=downloaded_html)
         article.parse()
         return article.text
+    
+    except requests.RequestException as e:
+        print(f"HTTP request failed for {url}: {e}", file=sys.stderr)
+        return ""
+    except Exception as e:
+        print(f"Error extracting text from {url}: {e}", file=sys.stderr)
+        return ""
 
-def getinfo(url: str):
+def getinfo(url: str) -> list:
     article = newspaper.Article(url)
-    article.download()
+    article.download(headers=HEADERS) # Use headers for download
     article.parse()
     article.nlp()
     return [article.authors, article.publish_date, article.keywords, article.tags]
@@ -109,28 +130,22 @@ def getinfo(url: str):
 def analyze_url(url: str) -> str:
     print(url)
     try:
-        article = newspaper.Article(url)
-        #article.download()
-        #article.parse()
-        #article.nlp()
-        # Have to download NLTK ** Summary
-        print(url)
-        #info = getinfo(url)
+        # Note: newspaper.Article() and its methods are no longer needed here
+        # since the `text()` function handles the downloading and parsing.
+        
         print("got article info", flush=True)
 
         article_text = text(url)
 
-        #summary = article.summary
-        print("summarized article", flush=True)
+        if not article_text:
+            return "Error: Could not extract any text from the article."
+
+        print("got article text", flush=True)
 
         gpt_analysis = getRequests(article_text)
         print("got gpt analysis", flush=True)
 
-        #related = fetch_related(summary, url)
-        print("fetched related articles", flush=True)
-
         response = f"{gpt_analysis}"
-        #response = f"Authors: {info[0]}\nDate: {info[1]}\nKeywords: {info[2]}\nTags: {info[3]}\n\nSummary:\n{summary}\n\nGPT Analysis:\n{gpt_analysis}\n\nRelated Articles:\n{chr(10).join(related) if related else 'None'}"
         return response
     except Exception as e:
         return f"Error analyzing article: {e}"
