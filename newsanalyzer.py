@@ -1,20 +1,17 @@
 # newsanalyzer.py
 import sys
 import time
-import random
+import trafilatura
 import requests
 import newspaper
 import torch
-import trafilatura
+import random
 
 from gptreq import getRequests
-from pathlib import Path
 from transformers import pipeline
 from googlesearch import search
 from newspaper import Article
 from textblob import TextBlob
-
-# Imports for Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -23,8 +20,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# Use webdriver-manager for automatic driver management
-from webdriver_manager.chrome import ChromeDriverManager
+# The correct way to import and use a headless Chrome binary in Vercel
+# You must have 'aws-lambda-selenium' in your requirements.txt
+from aws_lambda_selenium.options import Options as SeleniumOptions
+from aws_lambda_selenium.service import Service as SeleniumService
 
 # Define a common User-Agent to avoid bot detection
 HEADERS = {
@@ -39,32 +38,34 @@ SINGLE = ["apnews.com"]
 DOMAIN_BIAS = {d: -1 for d in LEFT} | {d: 0 for d in CENTER} | {d: 1 for d in RIGHT}
 DOMAIN_BIAS_SINGLE = {d: 0 for d in SINGLE}
 
-# --- New Selenium-based scraping function ---
+
 def get_html_with_selenium(url: str) -> str:
-    """
-    Uses a headless Chrome browser to load a page and execute JavaScript.
-    Returns the page source.
-    """
-    options = Options()
-    # Run in headless mode (no visible browser window)
-    options.add_argument('--headless=new')
+    options = SeleniumOptions()
+    options.headless = True
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    
-    # You can add the User-Agent here as well
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=1280x1696')
+    options.add_argument('--user-data-dir=/tmp/user-data')
+    options.add_argument('--hide-scrollbars')
+    options.add_argument('--single-process')
+    options.add_argument('--data-path=/tmp/data-path')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--homedir=/tmp')
+    options.add_argument('--disk-cache-dir=/tmp/cache-dir')
+
+    # Pass the user agent with the options
     options.add_argument(f'user-agent={HEADERS["User-Agent"]}')
 
     try:
-        # Use webdriver-manager to automatically handle the correct driver version
-        service = Service(ChromeDriverManager().install())
+        # Use the specific Service class from aws-lambda-selenium
+        service = SeleniumService()
         driver = webdriver.Chrome(service=service, options=options)
         
         # Navigate to the URL
         driver.get(url)
 
-        # Wait for the page to load, especially for dynamically generated content
-        # You may need to adjust the wait time depending on the website
-        WebDriverWait(driver, 10).until(
+        # Wait for the page to load
+        WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, 'body'))
         )
         
@@ -75,12 +76,10 @@ def get_html_with_selenium(url: str) -> str:
         print(f"Selenium error: {e}", file=sys.stderr)
         return ""
     finally:
-        # Always quit the driver to release resources
         if 'driver' in locals():
             driver.quit()
 
-# --- Other functions remain mostly the same, but 'text' is updated ---
-
+# --- Other functions (unchanged from the user's code) ---
 def split_text(text, max_words=500):
     words = text.split()
     return [" ".join(words[i:i + max_words]) for i in range(0, len(words), max_words)]
@@ -146,8 +145,19 @@ def label(score: float) -> str:
     return "Left-leaning" if score < -0.1 else "Right-leaning" if score > 0.1 else "Neutral"
 
 def text(url: str) -> str:
-    # Use Selenium to get the HTML content, which can handle JavaScript and anti-bot measures
-    print("Attempting to download page with Selenium...", flush=True)
+    # First, try to download with newspaper's built-in download method
+    # This is a good, lightweight first attempt
+    article = newspaper.Article(url)
+    try:
+        article.download(headers=HEADERS)
+        article.parse()
+        if article.text:
+            return article.text
+    except Exception as e:
+        print(f"Newspaper3k download failed: {e}", file=sys.stderr)
+
+    # If newspaper fails, fall back to the Selenium-based approach
+    print("Newspaper3k failed, attempting to download with Selenium...", flush=True)
     downloaded_html = get_html_with_selenium(url)
 
     if not downloaded_html:
@@ -158,7 +168,7 @@ def text(url: str) -> str:
     extracted_text = trafilatura.extract(downloaded_html)
     if extracted_text and len(extracted_text) > 100:
         return extracted_text
-    
+
     # Fallback to newspaper3k if trafilatura fails
     print("Trafilatura failed, falling back to newspaper3k...")
     article = newspaper.Article(url)
@@ -170,6 +180,7 @@ def text(url: str) -> str:
     except Exception as e:
         print(f"Error extracting text with newspaper3k: {e}", file=sys.stderr)
         return ""
+
 
 def getinfo(url: str) -> list:
     article = newspaper.Article(url)
