@@ -6,6 +6,8 @@ import requests
 import newspaper
 import torch
 import random
+import os
+
 from gptreq import getRequests
 from transformers import pipeline
 from googlesearch import search
