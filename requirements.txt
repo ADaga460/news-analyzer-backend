@@ -15,4 +15,9 @@ googlesearch-python
 trafilatura
 selenium
 webdriver-manager
-aws-lambda-selenium
+readability-lxml
+goose3
+bs4
+zenrows
+scraperapi-sdk
+scrapingbee
