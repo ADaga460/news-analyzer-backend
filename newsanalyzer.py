@@ -44,7 +44,7 @@ def get_html_with_scraping_api(url: str) -> str:
     """
     Fetches HTML content for a URL using the ScraperAPI service.
     """
-    API_KEY = "c78fe769ae3819a8a55cb962906a2269"
+    API_KEY = os.getenv("SCRAPER_KEY")
     client = ScraperAPIClient(API_KEY)
 
     print("Trying ScraperAPI with a headless browser and premium proxies as a last resort...")

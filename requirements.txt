@@ -16,7 +16,7 @@ trafilatura
 selenium
 webdriver-manager
 readability-lxml
-goose3
+goose3>=3.1.18
 bs4
 zenrows
 scraperapi-sdk
