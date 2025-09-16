@@ -21,160 +21,77 @@ from requests.exceptions import RequestException, ConnectionError, HTTPError
 from scraperapi_sdk import ScraperAPIClient
 from urllib.parse import urlparse, urlunparse
 
+
 config = Config()
 
-# Define a common User-Agent to avoid bot detection
+# Define a common User-Agent
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
-LEFT = ["msnbc.com", "huffpost.com", "theguardian.com", "cnn.com"]
-RIGHT = ["nypost.com", "dailywire.com", "breitbart.com"]
-CENTER = ["apnews.com", "bbc.com"]
-SINGLE = ["apnews.com"]
-
-DOMAIN_BIAS = {d: -1 for d in LEFT} | {d: 0 for d in CENTER} | {d: 1 for d in RIGHT}
-DOMAIN_BIAS_SINGLE = {d: 0 for d in SINGLE}
-
-# --- Function to clean URL ---
+# --- Clean URL ---
 def clean_url(url: str) -> str:
-    """Cleans a URL by removing all query parameters and fragments."""
     parsed_url = urlparse(url)
     return urlunparse(parsed_url._replace(query="", fragment=""))
 
+# --- ScraperAPI ---
 def get_html_with_scraping_api(url: str) -> str:
-    """
-    Fetches HTML content for a URL using the ScraperAPI service.
-    """
     API_KEY = os.getenv("SCRAPER_KEY")
     client = ScraperAPIClient(API_KEY)
-
-    print("Trying ScraperAPI with a headless browser and premium proxies as a last resort...")
     try:
         html_content = client.get(url, params={'render': True, 'premium': True})
-        
-        if html_content:
-            print("Successfully retrieved page using ScraperAPI.")
-            return html_content
-        else:
-            print("ScraperAPI returned an empty response.", file=sys.stderr)
-            return ""
-            
+        return html_content if html_content else ""
     except Exception as e:
-        print(f"Error calling ScraperAPI: {e}", file=sys.stderr)
+        print(f"ScraperAPI error: {e}", file=sys.stderr)
         return ""
 
-# --- New helper function for parsing HTML content ---
+# --- Extract from HTML ---
 def extract_text_from_html(html_content: str, url: str) -> str:
-    """
-    Attempts to retrieve the main text content from raw HTML using multiple methods.
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-    }
-
-    print("Attempting to extract text from HTML...") # <--- DEBUGGING LINE
-
-    # Step 1: Try `trafilatura` first as it is often very effective
     extracted_text = trafilatura.extract(html_content, output_format='text')
     if extracted_text and len(extracted_text) > 100:
-        print("Using trafilatura...")
         return extracted_text
-
-    # Step 2: Try `newspaper4k` on the raw HTML
-    config = newspaper.Config()
-    config.browser_user_agent = headers['User-Agent']
-    article = newspaper.Article(url, config=config)
     try:
+        article = newspaper.Article(url)
         article.download(input_html=html_content)
         article.parse()
         if article.text and len(article.text) > 100:
-            print("Using newspaper4k...")
             return article.text
-    except Exception as e:
-        print(f"newspaper4k failed: {e}", file=sys.stderr)
-    
-    # Step 3: Try `readability-lxml`
+    except Exception:
+        pass
     try:
         doc = Document(html_content)
         extracted_text = BeautifulSoup(doc.summary(), 'lxml').get_text()
         if extracted_text and len(extracted_text) > 100:
-            print("Using readability-lxml...")
             return extracted_text
-    except Exception as e:
-        print(f"readability-lxml failed: {e}", file=sys.stderr)
-
-    # Step 4: Try `goose3`
+    except Exception:
+        pass
     try:
         g = Goose()
         article = g.extract(raw_html=html_content)
         if article.cleaned_text and len(article.cleaned_text) > 100:
-            print("Using goose3...")
             return article.cleaned_text
-    except Exception as e:
-        print(f"goose3 failed: {e}", file=sys.stderr)
-
-    # Step 5: Fallback to a basic BeautifulSoup extraction
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        content_div = soup.find('div', {'class': ['article-content', 'entry-content', 'post-content']})
-        if content_div:
-            extracted_text = content_div.get_text(strip=True)
-            if len(extracted_text) > 100:
-                print("Using fallback BeautifulSoup...")
-                return extracted_text
-        texts = soup.stripped_strings
-        extracted_text = ' '.join(texts)
-        if extracted_text and len(extracted_text) > 100:
-            print("Using a basic BeautifulSoup text extraction...")
-            return extracted_text
-    except Exception as e:
-        print(f"BeautifulSoup fallback failed: {e}", file=sys.stderr)
-
+    except Exception:
+        pass
     return "Could not retrieve article text."
 
-
-def text(url):
-    """
-    Attempts to retrieve the main text content from a given URL.
-    ScraperAPI is used only if all other free methods fail.
-    """
-    html_content = ""
-    
-    # Step 1: Try `requests` with robust user-agent and headers
+# --- Public entrypoint: get text from URL ---
+def text(url: str) -> str:
+    url = clean_url(url)
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+            'User-Agent': HEADERS['User-Agent'],
             'Accept-Language': 'en-US,en;q=0.9',
             'Referer': url
         }
-        print("Attempting initial requests.get...") # <--- DEBUGGING LINE
         response = requests.get(url, headers=headers, timeout=10)
-        print(f"Requests Status Code: {response.status_code}") # <--- DEBUGGING LINE
         response.raise_for_status()
         html_content = response.text
-        
         extracted_text = extract_text_from_html(html_content, url)
         if extracted_text and extracted_text != "Could not retrieve article text.":
             return extracted_text
-            
-    except HTTPError as e:
-        print(f"Requests failed with HTTP error: {e}", file=sys.stderr)
-        
-        if e.response.status_code == 403:
-            print("Encountered 403 Forbidden. Attempting local extraction on the returned HTML...")
-            html_content = e.response.text
-            extracted_text = extract_text_from_html(html_content, url)
-            
-            if extracted_text and extracted_text != "Could not retrieve article text.":
-                return extracted_text
-        
-    except (RequestException, ConnectionError) as e:
-        print(f"Requests failed to retrieve the page: {e}", file=sys.stderr)
-    
-    # Step 2: If we get here, all local methods have failed.
+    except Exception as e:
+        print(f"Requests error: {e}", file=sys.stderr)
     html_content = get_html_with_scraping_api(url)
-    
     return extract_text_from_html(html_content, url)
 
 # --- Other functions (unchanged from the user's code) ---
