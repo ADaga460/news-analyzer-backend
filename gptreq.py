@@ -2,12 +2,15 @@
 import os
 import requests
 
+OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
+if not OPENROUTER_KEY:
+    # do not crash in production; but it's helpful to fail early during dev
+    raise RuntimeError("Missing OPENROUTER_KEY environment variable")
 
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "deepseek/deepseek-chat-v3.1:free"  # your chosen model; change if needed
 
-def getRequests(article_text: str):
-    OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")  # from render
-    MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
-    
+def getRequests(article_text: str, temperature: float = 0.2):
     prompt = f"""
     Analyze the language and tone used in this article about [specific topic or issue] and assess its political bias. Determine if the article leans more towards liberal, 
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
@@ -48,24 +51,26 @@ def getRequests(article_text: str):
     """
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://news-analyzer-frontend-plat.vercel.app/",  # optional but recommended
-        "X-Title": "News Analyzer",                # optional
     }
 
     data = {
         "model": MODEL,
-        "temperature": 0.2,
+        "temperature": temperature,
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant that analyzes political bias and factual accuracy in news articles. You deal with only facts, and detect possible areas for bias with un"},
+            {"role": "system", "content": "You are a helpful assistant that analyzes political bias and factual accuracy."},
             {"role": "user", "content": prompt},
         ],
+        "max_tokens": 1200
     }
 
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-
-    if response.status_code != 200:
-        raise Exception(f"OpenRouter API error: {response.status_code}, {response.text}")
-
-    return response.json()["choices"][0]["message"]["content"]
+    resp = requests.post(OPENROUTER_URL, headers=headers, json=data, timeout=120)
+    if resp.status_code != 200:
+        raise RuntimeError(f"OpenRouter API error: {resp.status_code}, {resp.text}")
+    j = resp.json()
+    # defensive return
+    try:
+        return j["choices"][0]["message"]["content"]
+    except Exception:
+        return str(j)
