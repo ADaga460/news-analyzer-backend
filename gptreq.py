@@ -57,9 +57,9 @@ def getRequests(article_text: str, temperature: float = 0.2):
 
     data = {
         "model": MODEL,
-        "temperature": temperature,
+        "temperature": 0.2,
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant that analyzes political bias and factual accuracy."},
+            {"role": "system", "content": "You analyze political bias and factual accuracy ONLY from provided text. Do not fetch URLs yourself."},
             {"role": "user", "content": prompt},
         ],
         "max_tokens": 1200

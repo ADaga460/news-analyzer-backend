@@ -71,9 +71,9 @@ async def extract_article(request: Request, background_tasks: BackgroundTasks):
 @app.post("/api/analyze-text")
 async def analyze_text(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
-    article_text = data.get("text")
-    if not article_text:
-        return JSONResponse({"error": "Missing text"}, status_code=400)
+    text = data.get("text")
+    if not text or len(text.strip()) < 500:
+        return JSONResponse({"error": "Invalid or empty article text"}, status_code=400)
 
     job_id = str(uuid.uuid4())
     create_job(job_id, "analyze")
