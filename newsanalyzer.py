@@ -22,44 +22,60 @@ def clean_url(url: str) -> str:
 def extract_text_from_html(html: str, url: str) -> str:
     # trafilatura
     try:
+        print("Trying trafilatura")
         txt = trafilatura.extract(html, output_format="text")
         if txt and len(txt) > 100:
+            print("trafilatura succeeded")
             return txt
     except Exception:
+        print("trafilatura failed")
         pass
     # newspaper
     try:
+        print("Trying newspaper4k")
         art = Article(url)
-        art.download(input_html=html)
+        art.download()
         art.parse()
+        art.nlp()
         if art.text and len(art.text) > 100:
+            print("newspaper4k succeeded")
             return art.text
     except Exception:
+        print("newspaper4k failed")
         pass
     # readability
     try:
+        print("Trying readability-lxml")
         doc_summary = Document(html).summary()
         text = BeautifulSoup(doc_summary, "lxml").get_text()
         if text and len(text) > 100:
+            print("readability-lxml succeeded")
             return text
     except Exception:
+        print("readability-lxml failed")
         pass
     # goose
     try:
+        print("Trying goose3")
         g = Goose()
         article = g.extract(raw_html=html)
         if article.cleaned_text and len(article.cleaned_text) > 100:
+            print("goose3 succeeded")
             return article.cleaned_text
     except Exception:
+        print("goose3 failed")
         pass
     # fallback - page text
     try:
+        print("Trying fallback BeautifulSoup")
         soup = BeautifulSoup(html, "html.parser")
         texts = soup.stripped_strings
         combined = " ".join(texts)
         if combined and len(combined) > 100:
+            print("Fallback BeautifulSoup succeeded")
             return combined
     except Exception:
+        print("Fallback BeautifulSoup failed")
         pass
     return "Could not retrieve article text."
 
@@ -99,6 +115,7 @@ def text(url: str) -> str:
         pass
 
     # Try ScraperAPI fallback if available
+    print("Trying ScraperAPI fallback")
     html = get_html_with_scraperapi(url)
     if html:
         extracted = extract_text_from_html(html, url)

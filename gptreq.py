@@ -3,6 +3,7 @@ import os
 import requests
 
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
+# curl -X POST "http://127.0.0.1:8000/api/extract" -H "Content-Type: application/json" -d '{"url":"https://www.nytimes.com/2025/09/28/us/politics/trump-comey-retribution-precedent.html"}'
 if not OPENROUTER_KEY:
     # do not crash in production; but it's helpful to fail early during dev
     raise RuntimeError("Missing OPENROUTER_KEY environment variable")
@@ -57,7 +58,7 @@ def getRequests(article_text: str, temperature: float = 0.2):
 
     data = {
         "model": MODEL,
-        "temperature": 0.2,
+        "temperature": 0.1,
         "messages": [
             {"role": "system", "content": "You analyze political bias and factual accuracy ONLY from provided text. Do not fetch URLs yourself."},
             {"role": "user", "content": prompt},
