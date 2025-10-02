@@ -77,7 +77,7 @@ async def analyze_text(request: Request, background_tasks: BackgroundTasks):
 
     job_id = str(uuid.uuid4())
     create_job(job_id, "analyze")
-    background_tasks.add_task(_bg_analyze, job_id, article_text)
+    background_tasks.add_task(_bg_analyze, job_id, text)
     return {"job_id": job_id, "status": "processing"}
 
 @app.get("/api/job/{job_id}")
