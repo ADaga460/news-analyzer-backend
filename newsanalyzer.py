@@ -10,6 +10,9 @@ from readability import Document
 from goose3 import Goose
 from requests.exceptions import RequestException, HTTPError, ConnectionError
 
+# instructions to run
+#uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 # basic user agent
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
