@@ -9,7 +9,7 @@ if not OPENROUTER_KEY:
     raise RuntimeError("Missing OPENROUTER_KEY environment variable")
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "x-ai/grok-4-fast:free"  # your chosen model; change if needed
+MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"  # your chosen model; change if needed
 
 def getRequests(article_text: str, temperature: float = 0.2):
     prompt = f"""
@@ -19,7 +19,8 @@ def getRequests(article_text: str, temperature: float = 0.2):
     PolitiFact. Factual Evidence Score lowers based on its use of rhetoric, pathos, and heavily unbalanced content. If the article relies heavily on opinion, rhetoric, and unbalanced content,
     as well as lack of correct facts, lower factual score greatly. If the text appears to be exclusively opinionated, increase bias score heavily.  Analyze political bias from known bias in news outlets 
     (for example, AP News is center, Fox is known to be right, and NYTimes is known to be slightly left leaning), and due to article content.
-
+    Please note that the quotes used in every section are illustrative examples and may not directly correspond to the article provided. However, they serve to demonstrate how to justify the scores based on specific excerpts from the text.
+    The way they present the quotes may reflect their bias, so please consider that when analyzing the article. But their quotes material should not be used to justify the scores.
     Below is the format you must adhere to, where everything in brackets is filled in with what is relevent from the article:
 
     Factual Evidence Score: 
@@ -63,7 +64,7 @@ def getRequests(article_text: str, temperature: float = 0.2):
             {"role": "system", "content": "You analyze political bias and factual accuracy ONLY from provided text. Do not fetch URLs yourself."},
             {"role": "user", "content": prompt},
         ],
-        "max_tokens": 1200
+        "max_tokens": 120000
     }
 
     resp = requests.post(OPENROUTER_URL, headers=headers, json=data, timeout=120)
