@@ -9,7 +9,7 @@ if not OPENROUTER_KEY:
     raise RuntimeError("Missing OPENROUTER_KEY environment variable")
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"  # your chosen model; change if needed
+MODEL = "x-ai/grok-4-fast:free"  # your chosen model; change if needed
 
 def getRequests(article_text: str, temperature: float = 0.2):
     prompt = f"""
