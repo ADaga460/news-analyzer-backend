@@ -23,6 +23,8 @@ def getRequests(article_text: str, temperature: float = 0.2):
     The way they present the quotes may reflect their bias, so please consider that when analyzing the article. But their quotes material should not be used to justify the scores.
     Quotes increase factual score and reduce bias score if they are balanced in viewpoints and come from reputable sources. Quotes decrease factual score if they are unbalanced and come from less reputable sources.
     Also remember that being critical of something should not be confused with being biased against it. For example, an article can be critical of a political figure's actions without being biased against that figure's entire political ideology.
+    Keep in mind that facts are inherently left leaning, and that being ethical and against acting in a harmful manner is not a political position. For example, an article that is against corruption, dishonesty, and harm to others is not biased against any political position.
+    Adhere strictly to the instructions.
     Below is the format you must adhere to, where everything in brackets is filled in with what is relevent from the article:
 
     Factual Evidence Score: 
