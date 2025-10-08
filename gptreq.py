@@ -17,8 +17,10 @@ def getRequests(article_text: str, temperature: float = 0.2):
     conservative, or neutral stances on the issue. Provide factual evidence to support your analysis, including data, statistics, and expert opinions. Justify your scores for Fact and 
     Bias, as well as Factual Evidence, with specific examples from the text. Fact-check any claims made in the article using reputable sources such as Snopes, FactCheck.org, or 
     PolitiFact. Factual Evidence Score lowers based on its use of rhetoric, pathos, and heavily unbalanced content. If the article relies heavily on opinion, rhetoric, and unbalanced content,
-    as well as lack of correct facts, lower factual score greatly. If the text appears to be exclusively opinionated, increase bias score heavily.  Analyze political bias from known bias in news outlets 
+    as well as lack of correct facts, lower factual score greatly. If the text appears to be exclusively opinionated, increase bias score heavily.  A higher bias score means it is more biased, and a lower bias score tends to be an objective analysis. 
+    Analyze political bias from known bias in news outlets 
     (for example, AP News is center, Fox is known to be right, and NYTimes is known to be slightly left leaning), and due to article content.
+    Factual Evidence score is more likely to be increased if the source is reputable and well known for fact based reporting, as well as bias score being lower.
     Please note that the quotes used in every section are illustrative examples and may not directly correspond to the article provided. However, they serve to demonstrate how to justify the scores based on specific excerpts from the text.
     The way they present the quotes may reflect their bias, so please consider that when analyzing the article. But their quotes material should not be used to justify the scores.
     Quotes increase factual score and reduce bias score if they are balanced in viewpoints and come from reputable sources. Quotes decrease factual score if they are unbalanced and come from less reputable sources.
@@ -80,3 +82,4 @@ def getRequests(article_text: str, temperature: float = 0.2):
         return j["choices"][0]["message"]["content"]
     except Exception:
         return str(j)
+
